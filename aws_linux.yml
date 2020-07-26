@@ -88,3 +88,12 @@
       loop_control:
         label: "{{ item.id }}"
 
+#this task is to continue with app deployment, to add newly created host in inventory.
+    - name: adding host in ansible inventory only for run time
+      add_host:
+        name: "{{ item.public_ip }}"
+        groups: webnode 
+      loop: "{{ ec2_output.instances }}"
+      loop_control:
+        label: "{{ item.public_ip }}"  
+
