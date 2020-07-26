@@ -1,5 +1,5 @@
 ---
 #aws keys vars
 
-ec2_access_key: AKIAZIJBCNZT22R4OXYV
-ec2_secret_key: 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
+ec2_access_key: < PASTE ACCESS KEY HERE >
+ec2_secret_key: < PASTE SECRET KEY HERE >

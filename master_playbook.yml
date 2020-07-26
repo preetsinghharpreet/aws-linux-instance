@@ -4,4 +4,4 @@
   import_playbook: aws_linux.yml
 
 - name: apache configuration
-- import_playbook: apache.yml
+  import_playbook: apache.yml

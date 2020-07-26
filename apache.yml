@@ -1,6 +1,6 @@
 ---
 - name: playbook for apache on cloud instance
-  hosts: webnode 
+  hosts: 15.207.54.204
   remote_user: ec2-user
   become: true
   tasks:
@@ -48,17 +48,3 @@
         state: restarted
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-      
-    

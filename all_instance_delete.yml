@@ -1,0 +1,39 @@
+---
+- name: Delete ALL AWS instances
+  hosts: localhost
+  connection: local
+  vars:
+    region: ap-south-1
+  vars_files:
+    - keys.yml
+  gather_facts: false
+  tasks: 
+    - name: gathering facts of existing Instances
+      ec2_instance_info:
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        region: "{{ region }}"
+        filters:
+          instance-state-name: [ "running" ]
+      register: instance_facts
+      tags: info
+
+    - debug:
+        msg: "ID : {{ item.instance_id }} - Status : {{ item.state.name }}  - Public IP : {{ item.public_ip_address }}"
+      loop: "{{ instance_facts.instances }}"
+      loop_control:
+        label: "{{ item.instance_id }}"
+      tags: info
+
+    - name: Deleting all Instances 
+      ec2:
+        region: "{{ region }}"
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        instance_id: "{{ item.instance_id }}"
+        state: absent
+        wait: true
+      loop: "{{ instance_facts.instances }}"
+      loop_control:
+        label: "{{ item.instance_id }}"
+
