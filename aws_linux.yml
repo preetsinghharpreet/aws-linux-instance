@@ -1,0 +1,90 @@
+---
+- name: aws instance creation
+  hosts: localhost
+  connection: local
+  vars:
+    region: ap-south-1
+    id: linux-server   #instance id i-o34u34ofdsjdsflk EC2  name/id
+    key_pair: "{{ id }}-key"
+    sec_group: "{{ id }}-sg"
+    image: ami-0732b62d310b80e97
+    flavor: t2.micro
+    keypath: /tmp
+  vars_files:
+    - keys.yml
+  gather_facts: false
+  tasks: 
+    - name: gathering facts of existing Instances
+      ec2_instance_info:
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        region: "{{ region }}"
+      register: instance_facts
+      tags: info
+
+    - debug:
+        msg: "ID : {{ item.instance_id }} - Status : {{ item.state.name }}  - Public IP : {{ item.public_ip_address }}"
+      loop: "{{ instance_facts.instances }}"
+      loop_control:
+        label: "{{ item.instance_id }}"
+      tags: info
+
+    - name: generating keypairs
+      openssh_keypair:
+        path: "{{ keypath }}/{{ key_pair }}"
+
+    - name: adding public key in AWS EC2 Service
+      ec2_key:
+        region: "{{ region }}"
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        name: "{{ key_pair }}"
+        key_material: "{{ lookup('file', '{{ keypath }}/{{ key_pair }}.pub') }}" 
+ 
+    - name: creating security group
+      ec2_group:
+        region: "{{ region }}"
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        name: "{{ sec_group }}"
+        description: "SG for Linux instance for ansible"
+        rules:
+          - proto: tcp
+            ports:
+            - 22
+            cidr_ip: 0.0.0.0/0
+            rule_desc: "allow ssh"
+
+    - name: launch aws instance 
+      ec2:
+        region: "{{ region }}"
+        aws_access_key: "{{ ec2_access_key }}"
+        aws_secret_key: "{{ ec2_secret_key }}"
+        id: "{{ id }}"
+        group: "{{ sec_group }}"
+        image: "{{ image }}"
+        instance_tags:
+          env: dev
+          Name: web-1
+          Type: Linux
+        instance_type: "{{ flavor }}"
+        key_name: "{{ key_pair }}"
+        wait: true
+      register: ec2_output
+
+    - name: storing Public IP and Name in a file
+      copy:
+        content: >
+             "Win public ip : {{ item.public_ip }}"
+             "Win Host Name : {{ item.public_dns_name }}"
+        dest: "{{ lookup('env', 'PWD') }}/linux_host_details.txt"
+      loop: "{{ ec2_output.instances }}"
+      loop_control:
+        label: "{{ item.id }}"
+
+    - debug:
+        msg: "Instance PUBLIC IP : {{ item.public_dns_name }}"
+      loop: "{{ ec2_output.instances }}"
+      loop_control:
+        label: "{{ item.id }}"
+

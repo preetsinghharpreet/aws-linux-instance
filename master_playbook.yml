@@ -1,0 +1,7 @@
+---
+#master playbook for app deployment
+- name: instance deployment
+  import_playbook: aws_linux.yml
+
+- name: apache configuration
+- import_playbook: apache.yml

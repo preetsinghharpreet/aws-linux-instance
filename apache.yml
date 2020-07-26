@@ -1,0 +1,64 @@
+---
+- name: playbook for apache on cloud instance
+  hosts: webnode 
+  remote_user: ec2-user
+  become: true
+  tasks:
+    - name: installing packages
+      yum:
+        name: 
+          - httpd
+          - firewalld
+        state: installed
+
+    - name: starting the services
+      service:
+        name: "{{ item  }}"
+        state: started
+        enabled: true
+      with_items: 
+        - httpd
+        - firewalld
+
+    - name: adding document root index.html
+      template:
+        src: index.html.j2
+        dest: /var/www/html/custom.html
+
+    - name: modifying apache config file
+      replace:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: "index.html"
+        replace: "custom.html"
+      notify: 
+        - "restarting apache" 
+
+    - name: allow http in firewall   
+      firewalld:
+        service: http
+        state: enabled
+        permanent: yes
+        immediate: yes 
+      notify: restarting apache
+
+  handlers:     
+    - name: restarting apache
+      service:
+        name: httpd
+        state: restarted
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+    
